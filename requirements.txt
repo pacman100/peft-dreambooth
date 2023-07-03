@@ -24,4 +24,4 @@ wandb==0.15.0
 git+https://github.com/huggingface/peft
 
 # for kohya_ss library
--e . # no_verify leave this to specify not checking this a verification stage
+#-e . # no_verify leave this to specify not checking this a verification stage
