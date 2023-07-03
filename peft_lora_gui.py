@@ -466,13 +466,6 @@ def train_model(
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    if stop_text_encoder_training_pct > 0:
-        output_message(
-            msg='Output "stop text encoder training" is not yet supported. Ignoring',
-            headless=headless_bool,
-        )
-        stop_text_encoder_training_pct = 0
-
     if check_if_model_exist(
         output_name, output_dir, save_model_as, headless=headless_bool
     ):
@@ -558,15 +551,6 @@ def train_model(
     log.info(
         f'max_train_steps ({total_steps} / {train_batch_size} / {gradient_accumulation_steps} * {epoch} * {reg_factor}) = {max_train_steps}'
     )
-
-    # calculate stop encoder training
-    if stop_text_encoder_training_pct == None:
-        stop_text_encoder_training = 0
-    else:
-        stop_text_encoder_training = math.ceil(
-            float(max_train_steps) / 100 * int(stop_text_encoder_training_pct)
-        )
-    log.info(f'stop_text_encoder_training = {stop_text_encoder_training}')
 
     lr_warmup_steps = round(float(int(lr_warmup) * int(max_train_steps) / 100))
     log.info(f'lr_warmup_steps = {lr_warmup_steps}')
