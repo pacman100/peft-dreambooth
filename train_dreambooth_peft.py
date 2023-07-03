@@ -174,7 +174,6 @@ def train(args):
     # prepare network   
     unet_target_sub_modules = UNET_TARGET_REPLACE_MODULE+UNET_TARGET_REPLACE_MODULE_CONV2D_3X3 if args.enable_lora_for_conv_modules else UNET_TARGET_REPLACE_MODULE
     unet_target_modules = get_target_modules_list(unet, unet_target_sub_modules)
-    print(unet_target_modules)
     config = LoraConfig(
         r=args.network_dim,
         lora_alpha=args.network_alpha,
