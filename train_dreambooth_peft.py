@@ -50,7 +50,7 @@ def get_target_modules_list(model, replace_submodule_list):
                 is_conv2d = child_module.__class__.__name__ == "Conv2d"
                 if is_linear or is_conv2d:
                     target_modules.add(child_name)
-        return list(target_modules)
+    return list(target_modules)
 
 
 # TODO 他のスクリプトと共通化する
@@ -174,6 +174,7 @@ def train(args):
     # prepare network   
     unet_target_sub_modules = UNET_TARGET_REPLACE_MODULE+UNET_TARGET_REPLACE_MODULE_CONV2D_3X3 if args.enable_lora_for_conv_modules else UNET_TARGET_REPLACE_MODULE
     unet_target_modules = get_target_modules_list(unet, unet_target_sub_modules)
+    print(unet_target_modules)
     config = LoraConfig(
         r=args.network_dim,
         lora_alpha=args.network_alpha,
@@ -200,7 +201,7 @@ def train(args):
 
     if args.gradient_checkpointing:
         unet.enable_gradient_checkpointing()
-        text_encoder.gradient_checkpointing_enable()
+        # text_encoder.gradient_checkpointing_enable()
 
     # 学習に必要なクラスを準備する
     print("preparing optimizer, data loader etc.")
@@ -491,7 +492,7 @@ def train(args):
     del train_dataset_group
 
     # function for saving/removing
-    def save_model(ckpt_name, steps, epoch_no, unet, text_encoder, accelerator, train_text_encode=True, safe_serialization=True, force_sync_upload=False):
+    def save_model(ckpt_name, steps, epoch_no, force_sync_upload=False):
         os.makedirs(args.output_dir, exist_ok=True)
         ckpt_folder = os.path.join(args.output_dir, ckpt_name)
 
@@ -499,11 +500,12 @@ def train(args):
         metadata["ss_training_finished_at"] = str(time.time())
         metadata["ss_steps"] = str(steps)
         metadata["ss_epoch"] = str(epoch_no)
-        models_to_save = [unet, text_encoder] if train_text_encode else [unet]
-        for model in models_to_save:
+        models_to_save = [unet, text_encoder] if args.train_text_encoder else [unet]
+        folder_names = ["unet", "text_encoder"] if args.train_text_encoder else ["unet"]
+        for model, folder_name in zip(models_to_save,folder_names):
             unwrap_model= accelerator.unwrap_model(model)
             unwrap_model.save_pretrained(
-                ckpt_folder, state_dict=accelerator.get_state_dict(unwrap_model), safe_serialization=safe_serialization
+                os.path.join(ckpt_folder, folder_name), state_dict=accelerator.get_state_dict(unwrap_model), safe_serialization= "safetensors" in args.save_model_as
             )
         if args.huggingface_repo_id is not None:
             huggingface_util.upload(args, ckpt_folder, "/" + ckpt_name, force_sync_upload=force_sync_upload)
@@ -615,8 +617,7 @@ def train(args):
                     accelerator.wait_for_everyone()
                     if accelerator.is_main_process:
                         ckpt_name = train_util.get_step_ckpt_name(args, "", global_step)
-                        safe_serialization = "safetensors" in args.save_model_as
-                        save_model(ckpt_name, global_step, epoch, unet, text_encoder, accelerator, args.train_text_encoder, safe_serialization=safe_serialization)
+                        save_model(ckpt_name, global_step, epoch)
 
                         remove_step_no = train_util.get_remove_step_no(args, global_step)
                         if remove_step_no is not None:
@@ -652,7 +653,7 @@ def train(args):
             saving = (epoch + 1) % args.save_every_n_epochs == 0 and (epoch + 1) < num_train_epochs
             if is_main_process and saving:
                 ckpt_name = train_util.get_epoch_ckpt_name(args, "", epoch + 1)
-                save_model(ckpt_name, global_step, epoch, unet, text_encoder, accelerator, args.train_text_encoder, safe_serialization=safe_serialization)
+                save_model(ckpt_name, global_step, epoch)
 
                 remove_epoch_no = train_util.get_remove_epoch_no(args, epoch + 1)
                 if remove_epoch_no is not None:
@@ -671,12 +672,12 @@ def train(args):
     if is_main_process and args.save_state:
         train_util.save_state_on_train_end(args, accelerator)
 
-    del accelerator  # この後メモリを使うのでこれは消す
-
     if is_main_process:
         ckpt_name = train_util.get_last_ckpt_name(args, "")
-        save_model(ckpt_name, global_step, epoch, unet, text_encoder, accelerator, args.train_text_encoder, safe_serialization=safe_serialization, force_sync_upload=True)
+        save_model(ckpt_name, global_step, epoch, force_sync_upload=True)
         print("model saved.")
+
+    del accelerator  # この後メモリを使うのでこれは消す
 
 
 def setup_parser() -> argparse.ArgumentParser:

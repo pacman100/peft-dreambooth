@@ -616,8 +616,7 @@ def train_model(
     if scale_weight_norms > 0.0:
         run_cmd += f' --scale_weight_norms="{scale_weight_norms}"'
 
-    if network_dropout > 0.0:
-        run_cmd += f' --network_dropout="{network_dropout}"'
+    run_cmd += f' --network_dropout="{network_dropout}"'
 
     run_cmd += run_cmd_training(
         learning_rate=learning_rate,
