@@ -12,6 +12,7 @@ from library.resize_lora_gui import gradio_resize_lora_tab
 from library.extract_lora_from_dylora_gui import gradio_extract_dylora_tab
 from library.merge_lycoris_gui import gradio_merge_lycoris_tab
 from lora_gui import lora_tab
+from peft_lora_gui import peft_lora_tab
 
 import os
 from library.custom_logging import setup_logging
@@ -52,6 +53,8 @@ def UI(**kwargs):
             ) = dreambooth_tab(headless=headless)
         with gr.Tab('Dreambooth LoRA'):
             lora_tab(headless=headless)
+        with gr.Tab('Dreambooth PEFT LoRA'):
+            peft_lora_tab(headless=headless)
         with gr.Tab('Dreambooth TI'):
             ti_tab(headless=headless)
         with gr.Tab('Finetune'):
