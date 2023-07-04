@@ -51,6 +51,7 @@ from library.resize_lora_gui import gradio_resize_lora_tab
 from library.sampler_gui import sample_gradio_config, run_cmd_sample
 
 from library.custom_logging import setup_logging
+from peft_utils import combine_unet_and_text_encoder
 
 # Set up logging
 log = setup_logging()
@@ -1162,6 +1163,59 @@ def peft_lora_tab(
     )
 
 
+def convert_peft_model_checkpoint_tab():
+    gr.Markdown(
+            'This utility will combine the PEFT text encoder and unet into a single safetensors file. '
+            'This makes it easy to use with `https://github.com/AUTOMATIC1111/stable-diffusion-webui`'
+        )
+    with gr.Row():
+        pretrained_model_name_or_path = gr.Textbox(
+                label='Pretrained model name or path',
+                placeholder='enter the path to custom model or name of pretrained model',
+                value='runwayml/stable-diffusion-v1-5',
+            )
+        revision_id = gr.Textbox(
+                label='Revision of pretrained model identifier from huggingface.co/models',
+                placeholder='',
+                value='',
+            )
+        peft_model_name_or_path = gr.Textbox(
+                label='PEFT SD model name or path',
+                placeholder='enter the path to custom model or name of pretrained model',
+                value='',
+            )
+        peft_adapter_name = gr.Textbox(
+                label='PEFT model\'s adapter name with which it was saved',
+                placeholder='adapter name',
+                value='default',
+            )
+        dump_path = gr.Textbox(
+                label='Path to the output safetensors file for use with webui.',
+                placeholder='lora_trained.safetensors',
+                value='',
+            )
+        
+        
+        convert_button = gr.Button('Convert the checkpoint')
+        float16 = gr.Checkbox(label='save in flat16 dtype', value=True)
+
+        sd_checkpoint_revision = revision_id if revision_id != "" else None
+        inputs = [
+            pretrained_model_name_or_path,
+            peft_model_name_or_path,
+            dump_path,
+            peft_adapter_name,
+            float16,
+            sd_checkpoint_revision
+        ]
+
+        convert_button.click(
+            combine_unet_and_text_encoder,
+            inputs=inputs,
+            show_progress=False,
+        )
+
+
 def UI(**kwargs):
     css = ''
 
@@ -1174,7 +1228,7 @@ def UI(**kwargs):
             css += file.read() + '\n'
 
     interface = gr.Blocks(
-        css=css, title='Kohya_ss GUI', theme=gr.themes.Default()
+        css=css, title='PEFT DreamBooth GUI', theme=gr.themes.Default()
     )
 
     with interface:
@@ -1194,6 +1248,8 @@ def UI(**kwargs):
                 enable_copy_info_button=True,
                 headless=headless,
             )
+            with gr.Tab('Convert PEFT Model Chekpoint'):
+                convert_peft_model_checkpoint_tab(headless=headless)
 
     # Show the interface
     launch_kwargs = {}
