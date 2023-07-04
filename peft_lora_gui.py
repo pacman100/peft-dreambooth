@@ -1179,6 +1179,7 @@ def convert_peft_model_checkpoint_tab(headless=False):
                 placeholder='',
                 value='',
             )
+    with gr.Row():
         peft_model_name_or_path = gr.Textbox(
                 label='PEFT SD model name or path',
                 placeholder='enter the path to custom model or name of pretrained model',
@@ -1189,16 +1190,17 @@ def convert_peft_model_checkpoint_tab(headless=False):
                 placeholder='adapter name',
                 value='default',
             )
+    with gr.Row():
         dump_path = gr.Textbox(
                 label='Path to the output safetensors file for use with webui.',
                 placeholder='lora_trained.safetensors',
                 value='',
             )
-        
-        
-        convert_button = gr.Button('Convert the checkpoint')
         float16 = gr.Checkbox(label='save in flat16 dtype', value=True)
-
+        
+    with gr.box():
+        convert_button = gr.Button('Convert the checkpoint')
+        
         sd_checkpoint_revision = revision_id if revision_id != "" else None
         inputs = [
             pretrained_model_name_or_path,
