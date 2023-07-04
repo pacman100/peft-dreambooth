@@ -1163,7 +1163,7 @@ def peft_lora_tab(
     )
 
 
-def convert_peft_model_checkpoint_tab():
+def convert_peft_model_checkpoint_tab(headless=False):
     gr.Markdown(
             'This utility will combine the PEFT text encoder and unet into a single safetensors file. '
             'This makes it easy to use with `https://github.com/AUTOMATIC1111/stable-diffusion-webui`'
