@@ -1201,14 +1201,13 @@ def convert_peft_model_checkpoint_tab(headless=False):
     with gr.Box():
         convert_button = gr.Button('Convert the checkpoint')
         
-    sd_checkpoint_revision = revision_id if revision_id != "" else None
     inputs = [
         pretrained_model_name_or_path,
         peft_model_name_or_path,
         dump_path,
         peft_adapter_name,
         float16,
-        sd_checkpoint_revision
+        revision_id
     ]
 
     convert_button.click(

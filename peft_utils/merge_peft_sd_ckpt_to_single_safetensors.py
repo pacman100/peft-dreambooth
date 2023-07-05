@@ -19,6 +19,7 @@ def combine_unet_and_text_encoder(
     metadata = {}
     state_dict = {}
     dtype = torch.float16 if half else torch.float32
+    sd_checkpoint_revision = sd_checkpoint_revision if sd_checkpoint_revision != "" else None
 
     # Load Text Encoder LoRA model
     text_encoder_peft_lora_path = os.path.join(peft_lora_path, "text_encoder")
@@ -30,7 +31,7 @@ def combine_unet_and_text_encoder(
         text_encoder_state_dict = get_peft_model_state_dict(text_encoder, adapter_name=adapter_name)
         text_encoder_state_dict = {k: v.to(dtype) for k, v in text_encoder_state_dict.items()}
         state_dict.update(text_encoder_state_dict)
-        target_modules_as_text = ",".join(text_encoder.peft_config[adapter_name]["target_modules"])
+        target_modules_as_text = ",".join(getattr(text_encoder.peft_config[adapter_name], "target_modules"))
         metadata["text_encoder_target_modules"] = target_modules_as_text
 
     # Load UNet LoRA model
@@ -41,10 +42,10 @@ def combine_unet_and_text_encoder(
         unet_state_dict = get_peft_model_state_dict(unet, adapter_name=adapter_name)
         unet_state_dict = {k: v.to(dtype) for k, v in unet_state_dict.items()}
         state_dict.update(unet_state_dict)
-        target_modules_as_text = ",".join(text_encoder.peft_config[adapter_name]["target_modules"])
+        target_modules_as_text = ",".join(getattr(unet.peft_config[adapter_name], "target_modules"))
         metadata["unet_target_modules"] = target_modules_as_text
         for param in ["r", "lora_alpha", "lora_dropout"]:
-            metadata[param] = text_encoder.peft_config[adapter_name][param]
+            metadata[param] = str(getattr(unet.peft_config[adapter_name], param))
 
     print(f"{metadata=}")
     print(f"saving the converted ckpt to {dump_path=}")
